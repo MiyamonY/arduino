@@ -50,16 +50,22 @@ static uint8_t blackligh = BLACK_LIGHT_ON;
 
 #define DDRAM_ADDR_SET(data) (0x1<<7 | (data))
 
+void lcd_send_byte(uint8_t data)
+{
+  Serial.print("send byte: 0x");
+  Serial.println(data, 16);
+  Wire.beginTransmission(HILETGO_2004A_ADDR);
+  Wire.write(data);
+  Wire.endTransmission();
+  return;
+}
+
 void lcd_send_enable(uint8_t data)
 {
-  Wire.beginTransmission(HILETGO_2004A_ADDR);
-  Wire.write(data | CONTROL_BIT_EN_ENABLE | blackligh);
-  Wire.endTransmission();
+  lcd_send_byte(data | CONTROL_BIT_EN_ENABLE | blackligh);
   delayMicroseconds(1);
 
-  Wire.beginTransmission(HILETGO_2004A_ADDR);
-  Wire.write((data & (~CONTROL_BIT_EN_ENABLE)) | blackligh);
-  Wire.endTransmission();
+  lcd_send_byte((data & (~CONTROL_BIT_EN_ENABLE)) | blackligh);
   delayMicroseconds(50);
 
   return;
@@ -67,11 +73,7 @@ void lcd_send_enable(uint8_t data)
 
 void lcd_send_4bits(uint8_t data)
 {
-  Serial.print("send data: 0b");
-  Serial.println(data, 2);
-  Wire.beginTransmission(HILETGO_2004A_ADDR);
-  Wire.write(data | blackligh);
-  Wire.endTransmission();
+  lcd_send_byte(data | blackligh);
 
   /* 先にRX, R/Wを上げておいてE(nable)端子をH/Lする */
   lcd_send_enable(data);
@@ -127,6 +129,8 @@ void setup() {
   Wire.begin();
   Serial.begin(9600);
   lcd_initialize();
+  lcd_send_data((uint8_t)'a');
+#if 0
   lcd_move_cursor(0,0);
   lcd_send_data((uint8_t)'W');
   lcd_send_data((uint8_t)'e');
@@ -153,8 +157,7 @@ void setup() {
   for(uint8_t i = 0xB1; i < 0xff; i++){
     lcd_send_data((uint8_t)i);
   }
-
-  /* test(); */
+#endif
   return;
 }
 
